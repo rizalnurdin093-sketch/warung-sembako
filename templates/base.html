@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Warung Sembako{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<nav class="navbar">
+  <div class="nav-inner">
+    <a class="brand" href="{{ url_for('kasir') }}">Warung<span class="dot">.</span></a>
+    <ul class="nav-links">
+      {% if current_user %}
+        <li><a href="{{ url_for('kasir') }}" class="{{ 'active' if request.endpoint == 'kasir' }}">Kasir</a></li>
+        {% if current_user.role == 'owner' %}
+          <li><a href="{{ url_for('rekap') }}" class="{{ 'active' if request.endpoint == 'rekap' }}">Rekap</a></li>
+          <li><a href="{{ url_for('produk') }}" class="{{ 'active' if request.endpoint == 'produk' }}">Stok</a></li>
+          <li><a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' }}">Dashboard</a></li>
+        {% endif %}
+        <li class="nav-drop">
+          <button class="drop-btn">{{ current_user.nama or current_user.username }} ▾</button>
+          <div class="drop-menu">
+            {% if current_user.role == 'owner' %}
+              <a href="{{ url_for('audit') }}">Audit Log</a>
+              <a href="{{ url_for('setoran') }}">Setoran Kas</a>
+              <a href="{{ url_for('opname') }}">Opname Stok</a>
+              <a href="{{ url_for('restore_db') }}">Backup / Restore</a>
+              <div class="drop-sep"></div>
+            {% endif %}
+            <a href="{{ url_for('logout') }}">Logout</a>
+          </div>
+        </li>
+      {% else %}
+        <li><a href="{{ url_for('login') }}">Login</a></li>
+      {% endif %}
+    </ul>
+  </div>
+</nav>
+<main class="container">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="flash {{ category }}" style="background: {% if category == 'error' %}#fee2e2{% else %}#dbeafe{% endif %}; 
+                      color: {% if category == 'error' %}#991b1b{% else %}#1e40af{% endif %}; 
+                      padding: .75rem .9rem; border-radius: 10px; margin-bottom: 1rem;">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+{% block scripts %}{% endblock %}
+</body>
+</html>

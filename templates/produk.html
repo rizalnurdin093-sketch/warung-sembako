@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Stok & Produk — Warung{% endblock %}
+{% block content %}
+<div class="panel">
+  <h2>Tambah Produk</h2>
+  <form method="POST" action="{{ url_for('produk_tambah') }}" class="form-inline">
+    <input name="nama" placeholder="Nama barang" required>
+    <input name="satuan" placeholder="pcs/kg/bungkus" value="pcs" required>
+    <input name="harga_beli" type="number" placeholder="Harga beli" required>
+    <input name="harga_jual" type="number" placeholder="Harga jual" required>
+    <input name="stok" type="number" placeholder="Stok awal" value="0" required>
+    <button class="btn-solid" type="submit">+ Tambah</button>
+  </form>
+</div>
+
+<div class="panel">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <h2>Daftar Stok</h2>
+    <a href="{{ url_for('export_csv', jenis='produk') }}" class="btn-ghost">CSV</a>
+    <a href="{{ url_for('export_xlsx', jenis='produk') }}" class="btn-ghost">Excel</a>
+  </div>
+  <table class="table">
+    <thead>
+      <tr><th>Nama</th><th>Satuan</th><th>Harga Beli</th><th>Harga Jual</th><th>Stok</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for p in produk %}
+      <tr>
+        <td>{{ p['nama'] }}</td>
+        <td>{{ p['satuan'] }}</td>
+        <td class="num">Rp {{ '{:,}'.format(p['harga_beli']) }}</td>
+        <td class="num">Rp {{ '{:,}'.format(p['harga_jual']) }}</td>
+        <td class="{{ 'warn' if p['stok'] < 5 else '' }}">{{ p['stok'] }}</td>
+        <td><a class="btn-danger" href="{{ url_for('produk_hapus', pid=p['id']) }}">hapus</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="empty">Belum ada produk.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

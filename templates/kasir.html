@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% block title %}Kasir — Warung{% endblock %}
+{% block content %}
+<div class="kasir-grid">
+  <!-- Left: product picker -->
+  <div class="panel">
+    <h2>Pilih Barang</h2>
+    <div class="produk-grid">
+      {% for p in produk %}
+      <button class="produk-card" data-id="{{ p.id }}" data-nama="{{ p.nama }}"
+              data-harga="{{ p.harga_jual }}" data-stok="{{ p.stok }}" type="button">
+        <span class="p-nama">{{ p.nama }}</span>
+        <span class="p-harga">Rp {{ '{:,}'.format(p.harga_jual) }}</span>
+        <span class="p-stok">stok: {{ p.stok }}</span>
+      </button>
+      {% endfor %}
+    </div>
+    {% if not produk %}
+    <p class="empty">Belum ada produk. Tambah dulu di menu <a href="{{ url_for('produk') }}">Stok</a>.</p>
+    {% endif %}
+  </div>
+
+  <!-- Right: cart -->
+  <div class="panel">
+    <h2>Transaksi</h2>
+    <form method="POST" action="{{ url_for('jual') }}" id="jualForm">
+      <div class="form-row">
+        <label>Barang</label>
+        <input type="text" id="prodNama" value="" placeholder="Pilih di kiri" readonly required>
+        <input type="hidden" name="produk_id" id="prodId">
+      </div>
+      <div class="form-row">
+        <label>Harga Satuan</label>
+        <input type="text" id="prodHarga" value="Rp 0" readonly>
+      </div>
+      <div class="form-row">
+        <label>Jumlah (qty)</label>
+        <input type="number" name="qty" id="prodQty" value="1" min="1" required>
+      </div>
+      <div class="form-row totals">
+        <span>Total</span>
+        <strong id="prodTotal">Rp 0</strong>
+      </div>
+      <button class="btn-solid" type="submit">Catat Penjualan</button>
+      <p class="stok-warn" id="stokWarn"></p>
+    </form>
+    <p class="hint">Pilih produk di kiri, atur jumlah, lalu "Catat Penjualan".</p>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  let selected = null;
+  const fmt = n => 'Rp ' + n.toLocaleString('id-ID');
+
+  document.querySelectorAll('.produk-card').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.produk-card').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selected = {
+        id: btn.dataset.id, nama: btn.dataset.nama,
+        harga: parseInt(btn.dataset.harga), stok: parseInt(btn.dataset.stok)
+      };
+      document.getElementById('prodId').value = selected.id;
+      document.getElementById('prodNama').value = selected.nama;
+      document.getElementById('prodHarga').value = fmt(selected.harga);
+      document.getElementById('prodQty').value = 1;
+      updateTotal();
+    });
+  });
+
+  const qtyEl = document.getElementById('prodQty');
+  const warnEl = document.getElementById('stokWarn');
+  function updateTotal() {
+    if (!selected) return;
+    const qty = parseInt(qtyEl.value) || 1;
+    document.getElementById('prodTotal').textContent = fmt(selected.harga * qty);
+    if (qty > selected.stok) {
+      warnEl.textContent = '⚠ Stok tidak cukup (sisa ' + selected.stok + ')';
+    } else {
+      warnEl.textContent = '';
+    }
+  }
+  qtyEl.addEventListener('input', updateTotal);
+
+  document.getElementById('jualForm').addEventListener('submit', e => {
+    if (!selected) { e.preventDefault(); alert('Pilih barang dulu'); }
+  });
+</script>
+{% endblock %}

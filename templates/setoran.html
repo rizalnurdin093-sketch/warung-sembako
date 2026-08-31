@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Setoran Kas — Warung{% endblock %}
+{% block content %}
+<div class="panel">
+  <h2>Input Setoran Kas Harian</h2>
+  <form method="POST" action="{{ url_for('setoran_tambah') }}" class="form-inline" style="margin-bottom: 1.5rem;">
+    <input name="tanggal" type="date" value="{{ today }}" required style="width: 160px;">
+    <input name="jumlah" type="number" placeholder="Jumlah uang setoran" required style="width: 180px;">
+    <input name="catatan" placeholder="Catatan (opsional)" style="flex: 1;">
+    <button class="btn-solid" type="submit">Simpan Setoran</button>
+  </form>
+</div>
+
+<div class="panel">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <h2>Riwayat Setoran</h2>
+    <a href="{{ url_for('export_csv', jenis='setoran') }}" class="btn-ghost">CSV</a>
+    <a href="{{ url_for('export_xlsx', jenis='setoran') }}" class="btn-ghost">Excel</a>
+  </div>
+  <table class="table">
+    <thead>
+      <tr><th>Tanggal</th><th>Jumlah</th><th>Catatan</th><th>Waktu Input</th></tr>
+    </thead>
+    <tbody>
+      {% for s in rows %}
+      <tr>
+        <td>{{ s['tanggal'] }}</td>
+        <td class="num">Rp {{ '{:,}'.format(s['jumlah']) }}</td>
+        <td>{{ s['catatan'] or '-' }}</td>
+        <td>{{ s['created_at'] }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" class="empty">Belum ada setoran.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

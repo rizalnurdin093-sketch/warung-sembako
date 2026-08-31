@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Opname Stok — Warung{% endblock %}
+{% block content %}
+<div class="panel">
+  <h2>Input Opname Stok</h2>
+  <form method="POST" action="{{ url_for('opname_tambah') }}" class="form-inline" style="margin-bottom: 1.5rem;">
+    <input name="tanggal" type="date" value="{{ today }}" required style="width: 160px;">
+    <select name="produk_id" required style="width: 180px;">
+      <option value="">Pilih Produk</option>
+      {% for p in produk %}
+      <option value="{{ p.id }}">{{ p.nama }} (stok sistem: {{ p.stok }})</option>
+      {% endfor %}
+    </select>
+    <input name="stok_fisik" type="number" placeholder="Stok fisik (kamu hitung)" required style="width: 180px;">
+    <input name="catatan" placeholder="Catatan (opsional)" style="flex: 1;">
+    <button class="btn-solid" type="submit">Simpan Opname</button>
+  </form>
+</div>
+
+<div class="panel">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <h2>Riwayat Opname</h2>
+    <a href="{{ url_for('export_csv', jenis='opname') }}" class="btn-ghost">CSV</a>
+    <a href="{{ url_for('export_xlsx', jenis='opname') }}" class="btn-ghost">Excel</a>
+  </div>
+  <table class="table">
+    <thead>
+      <tr><th>Tanggal</th><th>Produk</th><th>Stok Sistem</th><th>Stok Fisik</th><th>Selisih</th><th>Catatan</th></tr>
+    </thead>
+    <tbody>
+      {% for o in rows %}
+      <tr>
+        <td>{{ o['tanggal'] }}</td>
+        <td>{{ o['nama_produk'] }}</td>
+        <td class="num">{{ o['stok_sistem'] }}</td>
+        <td class="num">{{ o['stok_fisik'] }}</td>
+        <td class="num {% if o['selisih'] < 0 %}warn{% endif %}">{{ o['selisih'] }}</td>
+        <td>{{ o['catatan'] or '-' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="empty">Belum ada opname.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

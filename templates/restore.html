@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Backup / Restore — Warung{% endblock %}
+{% block content %}
+<div class="panel">
+  <h2>Backup Database</h2>
+  <p style="margin-bottom: 1rem; color: var(--soft);">Unduh salinan lengkap database (produk, transaksi, setoran, opname, users).</p>
+  <a href="{{ url_for('backup_db') }}" class="btn-solid" style="width: auto;">⬇ Download Backup (.db)</a>
+</div>
+
+<div class="panel">
+  <h2>Restore Database</h2>
+  <p style="margin-bottom: 1rem; color: var(--soft);">
+    ⚠️ Restore akan <strong>menimpa semua data saat ini</strong> dengan isi file backup. Pastikan kamu backup dulu sebelum restore.
+  </p>
+  <form method="POST" action="{{ url_for('restore_db') }}" enctype="multipart/form-data" class="form-inline">
+    <input type="file" name="file" accept=".db" required>
+    <button class="btn-solid" type="submit" style="width: auto;">Restore Data</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}Grafik Penjualan — Warung{% endblock %}
+{% block content %}
+<div class="panel">
+  <div class="rekap-head">
+    <h2>Grafik Penjualan</h2>
+  </div>
+</div>
+
+<div class="panel">
+  <h2 style="margin-bottom: 1rem;">Omzet Harian (30 hari terakhir)</h2>
+  <canvas id="chartOmzet" height="100"></canvas>
+  {% if not labels %}
+  <p class="empty" style="padding: 1rem 0;">Belum ada data penjualan.</p>
+  {% endif %}
+</div>
+
+<div class="panel">
+  <h2 style="margin-bottom: 1rem;">Penjualan per Produk</h2>
+  <canvas id="chartProduk" height="120"></canvas>
+  {% if not p_labels %}
+  <p class="empty" style="padding: 1rem 0;">Belum ada data penjualan.</p>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+const labels = {{ labels|tojson }};
+const totals = {{ totals|tojson }};
+const pLabels = {{ p_labels|tojson }};
+const pVals = {{ p_vals|tojson }};
+
+if (labels.length) {
+  new Chart(document.getElementById('chartOmzet'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Omzet (Rp)',
+        data: totals,
+        backgroundColor: 'rgba(59, 130, 246, 0.8)',
+        borderColor: '#2563eb',
+        borderWidth: 1,
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+}
+
+if (pLabels.length) {
+  new Chart(document.getElementById('chartProduk'), {
+    type: 'pie',
+    data: {
+      labels: pLabels,
+      datasets: [{
+        data: pVals,
+        backgroundColor: ['#dc2626', '#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#0ea5e9']
+      }]
+    },
+    options: { responsive: true }
+  });
+}
+</script>
+{% endblock %}

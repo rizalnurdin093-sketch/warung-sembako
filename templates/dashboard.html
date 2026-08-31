@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — Warung{% endblock %}
+{% block content %}
+
+{% if stok_rendah_count > 0 %}
+<div class="panel" style="border-left: 4px solid var(--red);">
+  <h3 style="color: var(--red); font-size: 1rem; margin-bottom: .3rem;">
+    ⚠ Stok Rendah — {{ stok_rendah_count }} produk butuh restock
+  </h3>
+  <p style="color: var(--soft); font-size: .88rem;">
+    {% for p in stok_rendah_produk %}{{ p['nama'] }} ({{ p['stok'] }}){% if not loop.last %}, {% endif %}{% endfor %}
+  </p>
+</div>
+{% endif %}
+
+<!-- Kartu statistik -->
+<div class="stat-grid">
+  <div class="stat-card"><div class="label">Omzet 30 hari</div><div class="value">Rp {{ '{:,}'.format(total_tx) }}</div></div>
+  <div class="stat-card"><div class="label">Selisih kas 7 hari</div><div class="value" style="color: {{ 'var(--red)' if total_all and (data|selectattr('selisih_kas','lt',0)|list|length > 0) else 'var(--blue)' }};">Rp {{ '{:,}'.format(total_all) }}</div></div>
+  <div class="stat-card"><div class="label">Jumlah produk</div><div class="value">{{ jml_produk }}</div></div>
+  <div class="stat-card"><div class="label">Karyawan (kasir)</div><div class="value">{{ jml_kasir }}</div></div>
+</div>
+
+<!-- Grafik omzet + per produk (gabung) -->
+<div class="panel">
+  <div class="rekap-head">
+    <h2>Grafik Penjualan</h2>
+  </div>
+  <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;" class="charts-grid">
+    <div>
+      <h3 style="font-size: .9rem; color: var(--soft); margin-bottom: .5rem;">Omzet 30 hari terakhir</h3>
+      <canvas id="chartOmzet" height="110"></canvas>
+      {% if not grafik_labels %}<p class="empty">Belum ada data penjualan.</p>{% endif %}
+    </div>
+    <div>
+      <h3 style="font-size: .9rem; color: var(--soft); margin-bottom: .5rem;">Penjualan per produk</h3>
+      <canvas id="chartProduk" height="160"></canvas>
+      {% if not g_prod_labels %}<p class="empty">Belum ada data.</p>{% endif %}
+    </div>
+  </div>
+  <p class="hint" style="margin-top: .8rem;"><a href="{{ url_for('grafik') }}" style="color: var(--blue);">Lihat grafik layar penuh →</a></p>
+</div>
+
+<div class="panel">
+  <div class="rekap-head">
+    <h2>Pantauan Kas & Stok (7 hari terakhir)</h2>
+  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr><th>Tanggal</th><th>Kas Teoretis</th><th>Kas Setoran</th><th>Selisih Kas</th><th>Selisih Stok</th></tr>
+      </thead>
+      <tbody>
+        {% for d in data %}
+        <tr>
+          <td>{{ d.tanggal }}</td>
+          <td class="num">Rp {{ '{:,}'.format(d.kas_teoretis) }}</td>
+          <td class="num">Rp {{ '{:,}'.format(d.kas_setoran) }}</td>
+          <td class="num {% if d.selisih_kas < 0 %}warn{% endif %}" style="color: {{ 'var(--red)' if d.selisih_kas < 0 else 'var(--blue)' }};">{{ 'Rp ' ~ '{:,}'.format(d.selisih_kas) if d.selisih_kas != 0 else '0' }}</td>
+          <td class="num {% if d.selisih_stok < 0 %}warn{% endif %}">{{ d.selisih_stok }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="empty">Belum ada data transaksi.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="hint" style="margin-top: .8rem;">
+    <strong>Cara baca:</strong> Selisih kas negatif = setoran kurang dari seharusnya.<br>
+    Selisih stok negatif = stok fisik kurang dari sistem (indikasi barang terambil tanpa catatan).
+  </div>
+  <div style="margin-top: 1.2rem; display: flex; gap: .5rem; flex-wrap: wrap;">
+    <a href="{{ url_for('setoran') }}" class="btn-ghost">Input Setoran</a>
+    <a href="{{ url_for('opname') }}" class="btn-ghost">Input Opname</a>
+    <a href="{{ url_for('audit') }}" class="btn-ghost">Audit Log</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+const glabels = {{ grafik_labels|tojson }};
+const gtotals = {{ grafik_totals|tojson }};
+const pLabels = {{ g_prod_labels|tojson }};
+const pVals = {{ g_prod_vals|tojson }};
+
+if (glabels.length) {
+  new Chart(document.getElementById('chartOmzet'), {
+    type: 'bar',
+    data: { labels: glabels, datasets: [{ label: 'Omzet (Rp)', data: gtotals,
+      backgroundColor: 'rgba(59,130,246,.8)', borderColor: '#2563eb', borderWidth: 1, borderRadius: 4 }] },
+    options: { responsive: true, plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } } }
+  });
+}
+if (pLabels.length) {
+  new Chart(document.getElementById('chartProduk'), {
+    type: 'pie',
+    data: { labels: pLabels, datasets: [{ data: pVals,
+      backgroundColor: ['#dc2626','#3b82f6','#f59e0b','#10b981','#8b5cf6','#ec4899','#0ea5e9'] }] },
+    options: { responsive: true }
+  });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Rekap — Warung{% endblock %}
+{% block content %}
+<div class="panel">
+  <div class="rekap-head">
+    <h2>Rekap Harian</h2>
+    <div class="total-box">
+      <span>Total Omzet</span>
+      <strong>Rp {{ '{:,}'.format(total_all) }}</strong>
+    </div>
+  </div>
+  <div class="export-links">
+    <a href="{{ url_for('export_csv', jenis='transaksi') }}" class="btn-ghost">CSV</a>
+    <a href="{{ url_for('export_xlsx', jenis='transaksi') }}" class="btn-ghost">Excel</a>
+  </div>
+  <table class="table">
+    <thead>
+      <tr><th>Tanggal</th><th>Jumlah Transaksi</th><th>Item Terjual</th><th>Total</th></tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td>{{ r['hari'] }}</td>
+        <td>{{ r['jumlah_transaksi'] }}</td>
+        <td>{{ r['total_item'] }}</td>
+        <td class="num">Rp {{ '{:,}'.format(r['total']) }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" class="empty">Belum ada transaksi.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

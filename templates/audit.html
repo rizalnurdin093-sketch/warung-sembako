@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}Audit Log — Warung{% endblock %}
+{% block content %}
+<div class="panel">
+  <div class="rekap-head">
+    <h2>Rekap Penjualan per Kasir</h2>
+    <div class="total-box">
+      <span>Total Omzet</span>
+      <strong>Rp {{ '{:,}'.format(total_all) }}</strong>
+    </div>
+  </div>
+  <table class="table">
+    <thead>
+      <tr><th>Kasir</th><th>Jumlah Transaksi</th><th>Total Omzet</th></tr>
+    </thead>
+    <tbody>
+      {% for k in per_kasir %}
+      <tr>
+        <td>{{ k['kasir'] }}</td>
+        <td>{{ k['jumlah_transaksi'] }}</td>
+        <td class="num">Rp {{ '{:,}'.format(k['total']) }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="3" class="empty">Belum ada transaksi.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="panel">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <h2>Histori Transaksi Detail (Audit)</h2>
+    <a href="{{ url_for('export_csv', jenis='transaksi') }}" class="btn-ghost">Export CSV</a>
+  </div>
+  <div style="overflow-x: auto;">
+    <table class="table">
+      <thead>
+        <tr><th>ID</th><th>Waktu</th><th>Produk</th><th>Harga</th><th>Qty</th><th>Total</th><th>Kasir</th></tr>
+      </thead>
+      <tbody>
+        {% for t in transaksi %}
+        <tr>
+          <td>{{ t['id'] }}</td>
+          <td>{{ t['created_at'] }}</td>
+          <td>{{ t['nama_produk'] }}</td>
+          <td class="num">Rp {{ '{:,}'.format(t['harga_satuan']) }}</td>
+          <td class="num">{{ t['qty'] }}</td>
+          <td class="num">Rp {{ '{:,}'.format(t['total']) }}</td>
+          <td>{{ t['kasir'] or '-' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="empty">Belum ada transaksi.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
