@@ -9,15 +9,16 @@
       <strong>Rp {{ '{:,}'.format(total_all) }}</strong>
     </div>
   </div>
+  <div class="table-wrap">
   <table class="table">
     <thead>
-      <tr><th>Kasir</th><th>Jumlah Transaksi</th><th>Total Omzet</th></tr>
+      <tr><th>Kasir</th><th class="num">Jumlah Transaksi</th><th class="num">Total Omzet</th></tr>
     </thead>
     <tbody>
       {% for k in per_kasir %}
       <tr>
         <td>{{ k['kasir'] }}</td>
-        <td>{{ k['jumlah_transaksi'] }}</td>
+        <td class="num">{{ k['jumlah_transaksi'] }}</td>
         <td class="num">Rp {{ '{:,}'.format(k['total']) }}</td>
       </tr>
       {% else %}
@@ -25,6 +26,7 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
 </div>
 
 <div class="panel">
