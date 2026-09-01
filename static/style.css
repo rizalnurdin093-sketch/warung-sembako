@@ -70,7 +70,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helv
 .table th { color: var(--soft); font-weight: 600; font-size: .85rem; text-transform: uppercase; letter-spacing: .03em; text-align: left; padding: .7rem .75rem; border-bottom: 2px solid var(--border); vertical-align: middle; white-space: nowrap; }
 .table td { text-align: left; padding: .7rem .75rem; border-bottom: 1px solid var(--border); font-size: .88rem; vertical-align: middle; }
 .table th:first-child, .table td:first-child { min-width: 100px; }
-.table th.num, .table td.num { text-align: right; font-variant-numeric: tabular-nums; min-width: 120px; }
+.table th.num, .table td.num { text-align: right; font-variant-numeric: tabular-nums; min-width: 140px; }
 .table tr:hover td { background: #f8fafc; }
 .table .warn { color: var(--warn); font-weight: 600; }
 
