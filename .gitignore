@@ -8,6 +8,8 @@ venv/
 *.db
 *.sqlite3
 backup_*.db
+*.db.backup_*
+warung.db
 
 # IDE
 .vscode/

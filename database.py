@@ -24,28 +24,19 @@ def init_db():
             stok INTEGER NOT NULL DEFAULT 0
         )
     """)
-    # Transaksi penjualan (HEADER — 1 baris per struk/pembeli)
+    # Transaksi penjualan (1 baris per produk; group_id mengelompokkan 1 pembelian)
     c.execute("""
         CREATE TABLE IF NOT EXISTS transaksi (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            kasir TEXT,
-            total INTEGER NOT NULL DEFAULT 0,
-            bayar INTEGER,
-            kembalian INTEGER,
-            created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
-        )
-    """)
-    # Detail transaksi (ITEM — 1 baris per produk dalam struk)
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS detail_transaksi (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            transaksi_id INTEGER NOT NULL,
-            produk_id INTEGER,
             nama_produk TEXT NOT NULL,
             harga_satuan INTEGER NOT NULL,
             qty INTEGER NOT NULL,
-            subtotal INTEGER NOT NULL,
-            FOREIGN KEY (transaksi_id) REFERENCES transaksi(id)
+            total INTEGER NOT NULL,
+            created_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+            kasir TEXT,
+            group_id INTEGER,
+            bayar INTEGER,
+            kembalian INTEGER
         )
     """)
     # Users (owner / kasir)
@@ -92,96 +83,24 @@ def init_db():
     conn.commit()
     conn.close()
 
-    # ==== MIGRASI: transaksi lama (1 baris = 1 produk) -> header + detail =====
-    _migrate_transaksi()
+    _migrate_group_id()
 
 
-def _migrate_transaksi():
+def _migrate_group_id():
     """
-    Migrasi data lama dari skema transaksi-produk tunggal ke skema baru
-    (transaksi header + detail_transaksi item).
-
-    Deteksi: jika tabel transaksi masih punya kolom 'nama_produk'/'qty'
-    (skema lama), pindahkan tiap baris -> 1 header + 1 detail, lalu
-    drop kolom lama (rebuild tabel).
+    Migrasi Opsi A: pastikan kolom group_id ada di trasaksi. Data lama
+    (tanpa group_id) di-assign group_id = id (tiap baris = 1 pembelian terisolasi).
     """
     conn = get_db()
     cur = conn.cursor()
-    # Matikan FK constraint selama migrasi (rename/drop tabel)
-    cur.execute("PRAGMA foreign_keys = OFF")
-    # Cek kolom transaksi
     cols = [r[1] for r in cur.execute("PRAGMA table_info(transaksi)").fetchall()]
-    if 'nama_produk' not in cols:
-        # Sudah skema baru, tidak usah migrasi
-        conn.close()
-        return
-
-    # Ambil semua transaksi lama
-    old_rows = conn.execute(
-        "SELECT id, nama_produk, harga_satuan, qty, total, created_at, kasir FROM transaksi"
-    ).fetchall()
-
-    # Backup file lama dulu
-    _backup_before_migrate()
-
-    # Rename tabel lama -> simpan, buat tabel baru, isi ulang
-    cur.execute("ALTER TABLE transaksi RENAME TO transaksi_old")
-    conn.commit()
-
-    # Recreate tabel baru (skema header)
-    cur.execute("""
-        CREATE TABLE transaksi (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            kasir TEXT,
-            total INTEGER NOT NULL DEFAULT 0,
-            bayar INTEGER,
-            kembalian INTEGER,
-            created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
-        )
-    """)
-    # Recreate detail_transaksi: DROP dulu karena FK lama menunjuk transaksi_old
-    cur.execute("DROP TABLE IF EXISTS detail_transaksi")
-    cur.execute("""
-        CREATE TABLE detail_transaksi (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            transaksi_id INTEGER NOT NULL,
-            produk_id INTEGER,
-            nama_produk TEXT NOT NULL,
-            harga_satuan INTEGER NOT NULL,
-            qty INTEGER NOT NULL,
-            subtotal INTEGER NOT NULL,
-            FOREIGN KEY (transaksi_id) REFERENCES transaksi(id)
-        )
-    """)
-
-    # Isi ulang: each old row -> 1 header + 1 detail
-    for r in old_rows:
-        cur.execute(
-            "INSERT INTO transaksi (id, kasir, total, created_at) VALUES (?,?,?,?)",
-            (r['id'], r['kasir'], r['total'], r['created_at'])
-        )
-        cur.execute(
-            "INSERT INTO detail_transaksi (transaksi_id, nama_produk, harga_satuan, qty, subtotal) VALUES (?,?,?,?,?)",
-            (r['id'], r['nama_produk'], r['harga_satuan'], r['qty'], r['total'])
-        )
-    conn.commit()
-
-    # Hapus tabel lama
-    cur.execute("DROP TABLE transaksi_old")
+    new_cols = [c for c in ('group_id', 'bayar', 'kembalian') if c not in cols]
+    for c in new_cols:
+        cur.execute(f"ALTER TABLE transaksi ADD COLUMN {c} INTEGER")
+    # Data lama: group_id = id kalau NULL
+    cur.execute("UPDATE transaksi SET group_id = id WHERE group_id IS NULL")
     conn.commit()
     conn.close()
-
-
-def _backup_before_migrate():
-    """Buat salinan DB ke file backup_*.db sebelum migrasi (jaga-jaga)."""
-    import datetime
-    stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    dst = DB_PATH + f".backup_{stamp}"
-    import shutil
-    try:
-        shutil.copyfile(DB_PATH, dst)
-    except Exception:
-        pass
 
 def produk_list():
     conn = get_db()
@@ -210,53 +129,47 @@ def stok_kurang(pid, qty):
 
 def transaksi_buat(cart, kasir, bayar=None):
     """
-    Buat 1 transaksi (struk) berisi beberapa item + kurangi stok.
-    cart: list of dict {'produk_id', 'nama', 'harga_jual', 'qty', 'stok'}
-    Return: (transaksi_id, total)
+    Opsi A: buat 1 pembelian (group) berisi beberapa item. Setiap item = 1 baris
+    di tabel transaksi, semua baris punya group_id yang sama. Kurangi stok tiap item.
+    cart: list of dict {'produk_id', 'nama', 'harga_jual', 'qty'}
+    Return: (group_id, total)
     """
     conn = get_db()
     cur = conn.cursor()
     total = sum(item['harga_jual'] * item['qty'] for item in cart)
 
-    # Bayar/kembalian
     bayar_int = int(bayar) if bayar and str(bayar).strip() else None
     kembalian = (bayar_int - total) if bayar_int is not None else None
     if bayar_int is not None and bayar_int < total:
         conn.close()
         raise ValueError("Uang bayar kurang dari total")
 
-    cur.execute(
-        "INSERT INTO transaksi (kasir, total, bayar, kembalian) VALUES (?,?,?,?)",
-        (kasir, total, bayar_int, kembalian)
-    )
-    tid = cur.lastrowid
+    # Ambil id terbesar sebagai group_id berikutnya
+    row = cur.execute("SELECT COALESCE(MAX(group_id), 0) AS m FROM transaksi").fetchone()
+    gid = row['m'] + 1
 
     for item in cart:
-        subtotal = item['harga_jual'] * item['qty']
         cur.execute(
-            """INSERT INTO detail_transaksi
-               (transaksi_id, produk_id, nama_produk, harga_satuan, qty, subtotal)
-               VALUES (?,?,?,?,?,?)""",
-            (tid, item['produk_id'], item['nama'], item['harga_jual'], item['qty'], subtotal)
+            "INSERT INTO transaksi (nama_produk, harga_satuan, qty, total, kasir, group_id, bayar, kembalian) VALUES (?,?,?,?,?,?,?,?)",
+            (item['nama'], item['harga_jual'], item['qty'], item['harga_jual'] * item['qty'],
+             kasir, gid, bayar_int, kembalian)
         )
-        cur.execute("UPDATE produk SET stok = stok - ? WHERE id=?",
-                    (item['qty'], item['produk_id']))
+        cur.execute("UPDATE produk SET stok = stok - ? WHERE id=?", (item['qty'], item['produk_id']))
 
     conn.commit()
     conn.close()
-    return tid, total
+    return gid, total
 
 def rekap_harian():
     conn = get_db()
     rows = conn.execute("""
-        SELECT t.created_at AS hari,
-               SUM(t.total) AS total,
-               COUNT(t.id) AS jumlah_transaksi,
-               COALESCE(SUM(d.qty), 0) AS total_item
-        FROM transaksi t
-        LEFT JOIN detail_transaksi d ON d.transaksi_id = t.id
-        GROUP BY date(t.created_at)
-        ORDER BY t.created_at DESC
+        SELECT created_at AS hari,
+               SUM(total) AS total,
+               COUNT(DISTINCT group_id) AS jumlah_transaksi,
+               SUM(qty) AS total_item
+        FROM transaksi
+        GROUP BY date(created_at)
+        ORDER BY created_at DESC
     """).fetchall()
     conn.close()
     return rows
@@ -328,35 +241,24 @@ def omzet_by_date(tanggal):
     row = conn.execute("SELECT SUM(total) AS total FROM transaksi WHERE date(created_at)=?", (tanggal,)).fetchone()
     conn.close()
     return row['total'] or 0
+
 # ===== AUDIT LOG (histori transaksi detail per kasir) =====
 def transaksi_all():
-    """Semua baris transaksi header (satu per struk) — untuk log & export."""
     conn = get_db()
     rows = conn.execute("""
-        SELECT id, created_at, kasir, total, bayar, kembalian
+        SELECT id, created_at, nama_produk, harga_satuan, qty, total, kasir, group_id
         FROM transaksi ORDER BY created_at DESC, id DESC
     """).fetchall()
     conn.close()
     return rows
 
-
-def transaksi_detail(transaksi_id):
-    """Item-item dalam satu transaksi (untuk lihat isi struk)."""
-    conn = get_db()
-    rows = conn.execute("""
-        SELECT transaksi_id, nama_produk, harga_satuan, qty, subtotal
-        FROM detail_transaksi WHERE transaksi_id=? ORDER BY id
-    """, (transaksi_id,)).fetchall()
-    conn.close()
-    return rows
-
 def rekap_per_kasir():
-    """Total penjualan per kasir."""
+    """Total penjualan per kasir (jumlah pembeli = distinct group_id)."""
     conn = get_db()
     rows = conn.execute("""
         SELECT COALESCE(kasir, 'tanpa-nama') AS kasir,
                SUM(total) AS total,
-               COUNT(id) AS jumlah_transaksi
+               COUNT(DISTINCT group_id) AS jumlah_transaksi
         FROM transaksi
         GROUP BY COALESCE(kasir, 'tanpa-nama')
         ORDER BY total DESC
@@ -371,7 +273,7 @@ def grafik_omzet_harian(hari=30):
     rows = conn.execute("""
         SELECT date(created_at) AS tgl,
                SUM(total) AS total,
-               COUNT(id) AS jumlah
+               COUNT(*) AS jumlah
         FROM transaksi
         GROUP BY date(created_at)
         ORDER BY date(created_at) DESC
@@ -381,13 +283,13 @@ def grafik_omzet_harian(hari=30):
     return list(reversed(rows))  # urut ASC
 
 def grafik_penjualan_produk():
-    """Total penjualan per produk (nama + qty terjual) dari detail_transaksi."""
+    """Total penjualan per produk (nama + qty terjual)."""
     conn = get_db()
     rows = conn.execute("""
         SELECT nama_produk AS nama,
                SUM(qty) AS qty,
-               SUM(subtotal) AS total
-        FROM detail_transaksi
+               SUM(total) AS total
+        FROM transaksi
         GROUP BY nama_produk
         ORDER BY total DESC
     """).fetchall()

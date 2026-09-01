@@ -50,7 +50,6 @@
   const fmt = n => 'Rp ' + n.toLocaleString('id-ID');
   let cart = []; // {id, nama, harga, stok, qty}
 
-  // Search filter
   const searchEl = document.getElementById('searchProduk');
   const grid = document.getElementById('produkGrid');
   if (searchEl) {
@@ -62,7 +61,6 @@
     });
   }
 
-  // Click produk -> add to cart
   document.querySelectorAll('.produk-card').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = parseInt(btn.dataset.id);
@@ -84,8 +82,7 @@
     const box = document.getElementById('cart');
     const empty = document.getElementById('cartEmpty');
     box.querySelectorAll('.cart-item').forEach(el => el.remove());
-    if (cart.length === 0) { empty.style.display = ''; }
-    else { empty.style.display = 'none'; }
+    empty.style.display = cart.length === 0 ? '' : 'none';
 
     cart.forEach((c, i) => {
       const div = document.createElement('div');
@@ -128,7 +125,7 @@
     const t = cartTotal();
     totalEl.textContent = fmt(t);
     const bayar = parseInt(bayarEl.value) || 0;
-    kembEl.textContent = t > 0 && bayar >= t ? fmt(bayar - t) : (t>0 ? 'Rp 0' : 'Rp 0');
+    kembEl.textContent = (t > 0 && bayar >= t) ? fmt(bayar - t) : 'Rp 0';
   }
   bayarEl.addEventListener('input', updateTotal);
 
@@ -152,9 +149,10 @@
       });
       const data = await res.json();
       if (!res.ok) { alert(data.error || 'Terjadi kesalahan'); return; }
-      alert('✅ Transaksi #' + data.transaksi_id + ' tersimpan.\nTotal: ' + fmt(data.total) + (data.kembalian ? '\nKembalian: ' + fmt(data.kembalian) : ''));
+      const kembalian = bayar - total;
+      alert('✅ Transaksi #' + data.group_id + ' tersimpan.\nTotal: ' + fmt(data.total) + (kembalian > 0 ? '\nKembalian: ' + fmt(kembalian) : ''));
       cart = []; bayarEl.value=''; renderCart();
-      location.reload(); // refresh stok
+      location.reload();
     } catch (err) { alert('Gagal menyimpan'); }
   });
 </script>
