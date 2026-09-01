@@ -31,7 +31,7 @@
         <td>{{ p['satuan'] }}</td>
         <td class="num">Rp {{ '{:,}'.format(p['harga_beli']) }}</td>
         <td class="num">Rp {{ '{:,}'.format(p['harga_jual']) }}</td>
-        <td class="{{ 'warn' if p['stok'] < 5 else '' }}">{{ p['stok'] }}</td>
+        <td class="num {{ 'warn' if p['stok'] < 5 else '' }}">{{ p['stok'] }}</td>
         <td><a class="btn-danger" href="{{ url_for('produk_hapus', pid=p['id']) }}">hapus</a></td>
       </tr>
       {% else %}
