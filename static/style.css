@@ -114,8 +114,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helv
   .container { padding: 1rem .75rem; }
   .panel { padding: 1rem; border-radius: 10px; }
   .produk-grid { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); }
-  .table th, .table td { padding: .5rem .6rem; font-size: .8rem; }
-  .table th.num, .table td.num { min-width: 90px; }
+  .table th, .table td { padding: .5rem .5rem; font-size: .8rem; }
+  .table th.num, .table td.num { min-width: 85px; }
+  /* Produk di mobile: sembunyikan SATUAN(2) & HARGA BELI(3), sisakan NAMA/HARGA JUAL/STOK */
+  table.stok-table th:nth-child(2), table.stok-table td:nth-child(2),
+  table.stok-table th:nth-child(3), table.stok-table td:nth-child(3) { display: none; }
+  /* Kolom pertama (nama/tanggal) cukup lebar */
+  .table th:first-child, .table td:first-child { min-width: 0; white-space: normal; }
   .total-box strong { font-size: 1.1rem; }
   .form-row.totals strong { font-size: 1.1rem; }
   .stat-grid { grid-template-columns: repeat(2, 1fr); }
