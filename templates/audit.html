@@ -12,13 +12,13 @@
   <div class="table-wrap">
   <table class="table">
     <thead>
-      <tr><th>Kasir</th><th class="num">Jumlah Transaksi</th><th class="num">Total Omzet</th></tr>
+      <tr><th>Kasir</th><th style="text-align:center;">Jumlah Transaksi</th><th class="num">Total Omzet</th></tr>
     </thead>
     <tbody>
       {% for k in per_kasir %}
       <tr>
         <td>{{ k['kasir'] }}</td>
-        <td class="num">{{ k['jumlah_transaksi'] }}</td>
+        <td style="text-align:center;">{{ k['jumlah_transaksi'] }}</td>
         <td class="num">Rp {{ '{:,}'.format(k['total']) }}</td>
       </tr>
       {% else %}
