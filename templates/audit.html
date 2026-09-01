@@ -41,7 +41,7 @@
         {% for t in transaksi %}
         <tr>
           <td>{{ t['id'] }}</td>
-          <td>{{ t['created_at'] }}</td>
+          <td>{{ t['created_at']|utc_to_wib }}</td>
           <td>{{ t['nama_produk'] }}</td>
           <td class="num">Rp {{ '{:,}'.format(t['harga_satuan']) }}</td>
           <td class="num">{{ t['qty'] }}</td>

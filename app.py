@@ -56,6 +56,21 @@ def inject_stok_rendah():
         return dict(stok_rendah_count=len(r), stok_rendah_produk=r)
     return dict(stok_rendah_count=0, stok_rendah_produk=[])
 
+@app.template_filter('utc_to_wib')
+def utc_to_wib(dt_str):
+    """Konversi UTC string ke WIB (UTC+7)."""
+    from datetime import datetime, timezone, timedelta
+    if not dt_str:
+        return ''
+    try:
+        dt = datetime.fromisoformat(dt_str.replace('Z', '+00:00'))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        wib = dt.astimezone(timezone(timedelta(hours=7)))
+        return wib.strftime("%Y-%m-%d %H:%M:%S")
+    except:
+        return dt_str
+
 # ===== LOGIN / LOGOUT =====
 @app.route('/login', methods=['GET', 'POST'])
 def login():

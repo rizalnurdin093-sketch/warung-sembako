@@ -36,6 +36,7 @@
         <td class="num">{{ o['stok_fisik'] }}</td>
         <td class="num {% if o['selisih'] < 0 %}warn{% endif %}">{{ o['selisih'] }}</td>
         <td>{{ o['catatan'] or '-' }}</td>
+        <td class="num" style="font-size: .75rem;">{{ o.get('created_at', '')|utc_to_wib }}</td>
       </tr>
       {% else %}
       <tr><td colspan="6" class="empty">Belum ada opname.</td></tr>

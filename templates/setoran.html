@@ -27,7 +27,7 @@
         <td>{{ s['tanggal'] }}</td>
         <td class="num">Rp {{ '{:,}'.format(s['jumlah']) }}</td>
         <td>{{ s['catatan'] or '-' }}</td>
-        <td>{{ s['created_at'] }}</td>
+        <td>{{ s['created_at']|utc_to_wib }}</td>
       </tr>
       {% else %}
       <tr><td colspan="4" class="empty">Belum ada setoran.</td></tr>

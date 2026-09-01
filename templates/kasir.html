@@ -5,12 +5,13 @@
   <!-- Left: product picker -->
   <div class="panel">
     <h2>Pilih Barang</h2>
-    <div class="produk-grid">
+    <input type="text" id="searchProduk" placeholder="Cari produk..." style="width: 100%; padding: .6rem .8rem; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 1rem;">
+    <div class="produk-grid" id="produkGrid">
       {% for p in produk %}
       <button class="produk-card" data-id="{{ p.id }}" data-nama="{{ p.nama }}"
               data-harga="{{ p.harga_jual }}" data-stok="{{ p.stok }}" type="button">
         <span class="p-nama">{{ p.nama }}</span>
-        <span class="p-harga">Rp {{ '{:,}'.format(p.harga_jual) }}</span>
+        <span class="p-harga num">Rp {{ '{:,}'.format(p.harga_jual) }}</span>
         <span class="p-stok">stok: {{ p.stok }}</span>
       </button>
       {% endfor %}
@@ -52,6 +53,19 @@
 <script>
   let selected = null;
   const fmt = n => 'Rp ' + n.toLocaleString('id-ID');
+
+  // Filter search
+  const searchEl = document.getElementById('searchProduk');
+  const grid = document.getElementById('produkGrid');
+  if (searchEl) {
+    searchEl.addEventListener('input', e => {
+      const query = e.target.value.toLowerCase();
+      grid.querySelectorAll('.produk-card').forEach(card => {
+        const nama = card.dataset.nama.toLowerCase();
+        card.style.display = nama.includes(query) ? '' : 'none';
+      });
+    });
+  }
 
   document.querySelectorAll('.produk-card').forEach(btn => {
     btn.addEventListener('click', () => {
