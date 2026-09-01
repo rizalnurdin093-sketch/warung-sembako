@@ -67,9 +67,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helv
 /* TABLE */
 .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .table { width: 100%; border-collapse: collapse; }
-.table th { color: var(--soft); font-weight: 600; font-size: .85rem; text-transform: uppercase; letter-spacing: .03em; text-align: left; padding: .7rem .75rem; border-bottom: 2px solid var(--border); vertical-align: middle; }
+.table th { color: var(--soft); font-weight: 600; font-size: .85rem; text-transform: uppercase; letter-spacing: .03em; text-align: left; padding: .7rem .75rem; border-bottom: 2px solid var(--border); vertical-align: middle; white-space: nowrap; }
 .table td { text-align: left; padding: .7rem .75rem; border-bottom: 1px solid var(--border); font-size: .88rem; vertical-align: middle; }
-.table th.num, .table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.table th.num, .table td.num { text-align: right; font-variant-numeric: tabular-nums; min-width: 110px; }
 .table tr:hover td { background: #f8fafc; }
 .table .warn { color: var(--warn); font-weight: 600; }
 
