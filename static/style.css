@@ -65,12 +65,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helv
 .form-inline .btn-solid { width: auto; }
 
 /* TABLE */
-.table-wrap { overflow-x: auto; }
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .table { width: 100%; border-collapse: collapse; }
-.table th, .table td { text-align: left; padding: .65rem .75rem; border-bottom: 1px solid var(--border); font-size: .88rem; white-space: nowrap; }
-.table th { color: var(--soft); font-weight: 600; font-size: .78rem; text-transform: uppercase; letter-spacing: .03em; }
+.table th, .table td { text-align: left; padding: .65rem .75rem; border-bottom: 1px solid var(--border); font-size: .88rem; word-break: break-word; }
+.table th { color: var(--soft); font-weight: 600; font-size: .78rem; text-transform: uppercase; letter-spacing: .03em; white-space: nowrap; }
 .table tr:hover td { background: #f8fafc; }
-.table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.table .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .table .warn { color: var(--warn); font-weight: 600; }
 
 /* BUTTONS */
