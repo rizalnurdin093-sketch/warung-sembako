@@ -115,6 +115,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helv
   .panel { padding: 1rem; border-radius: 10px; }
   .produk-grid { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); }
   .table th, .table td { padding: .5rem .6rem; font-size: .8rem; }
+  .table th.num, .table td.num { min-width: 90px; }
   .total-box strong { font-size: 1.1rem; }
   .form-row.totals strong { font-size: 1.1rem; }
   .stat-grid { grid-template-columns: repeat(2, 1fr); }
