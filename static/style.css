@@ -91,6 +91,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helv
 .table td { text-align: left; padding: .7rem .75rem; border-bottom: 1px solid var(--border); font-size: .88rem; vertical-align: middle; }
 .table th:first-child, .table td:first-child { min-width: 100px; }
 .table th.num, .table td.num { text-align: right; font-variant-numeric: tabular-nums; min-width: 140px; }
+.table th.num-sm, .table td.num-sm { text-align: right; font-variant-numeric: tabular-nums; min-width: 40px; }
 .table tr:hover td { background: #f8fafc; }
 .table .warn { color: var(--warn); font-weight: 600; }
 
