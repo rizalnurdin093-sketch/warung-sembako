@@ -66,12 +66,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helv
 
 /* TABLE */
 .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-.table { width: 100%; border-collapse: collapse; }
-.table th, .table td { text-align: left; padding: .65rem .75rem; border-bottom: 1px solid var(--border); font-size: .88rem; word-break: break-word; }
+.table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.table th, .table td { text-align: left; padding: .65rem .75rem; border-bottom: 1px solid var(--border); font-size: .88rem; word-break: break-word; overflow-wrap: break-word; }
 .table th { color: var(--soft); font-weight: 600; font-size: .78rem; text-transform: uppercase; letter-spacing: .03em; white-space: nowrap; }
 .table tr:hover td { background: #f8fafc; }
 .table .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .table .warn { color: var(--warn); font-weight: 600; }
+.table td:nth-child(1) { width: 25%; }
+.table td:nth-child(2), .table td:nth-child(3), .table td:nth-child(4), .table td:nth-child(5) { width: 15%; }
+.table td:nth-child(n+6) { width: auto; }
 
 /* BUTTONS */
 .btn-ghost { display: inline-block; padding: .45rem .9rem; border: 1px solid var(--border); border-radius: 8px; font-size: .82rem; color: var(--ink); background: var(--panel); transition: all .15s; text-decoration: none; cursor: pointer; }
