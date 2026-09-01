@@ -119,7 +119,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helv
 .nav-drop { position: relative; }
 .drop-btn { background: none; border: none; color: var(--ink); font-weight: 600; font-size: .9rem; padding: .4rem .6rem; border-radius: 8px; cursor: pointer; font-family: inherit; }
 .drop-btn:hover { background: #f1f5f9; }
-.drop-menu { display: none; position: absolute; right: 0; top: 100%; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-lg); min-width: 180px; padding: .35rem; z-index: 200; }
+.drop-menu { display: none; position: absolute; right: 0; top: calc(100% + 8px); background: var(--panel); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-lg); min-width: 190px; padding: .45rem; z-index: 200; }
 .nav-drop:hover .drop-menu, .nav-drop:focus-within .drop-menu { display: block; }
 .drop-menu a { display: block; padding: .55rem .75rem; border-radius: 8px; text-decoration: none; color: var(--ink); font-size: .88rem; }
 .drop-menu a:hover { background: #f1f5f9; color: var(--blue); }

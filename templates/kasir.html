@@ -119,17 +119,24 @@
   const bayarEl = document.getElementById('bayarInput');
   const totalEl = document.getElementById('cartTotal');
   const kembEl = document.getElementById('cartKembalian');
+  let bayarManual = false; // jika user sudah edit manual, jangan auto-overwrite
 
   function cartTotal() { return cart.reduce((s,c) => s + c.harga * c.qty, 0); }
   function updateTotal() {
     const t = cartTotal();
     totalEl.textContent = fmt(t);
+    // Auto-fill uang bayar = total (default), tapi tetap bisa diedit
+    if (!bayarManual) { bayarEl.value = t; }
     const bayar = parseInt(bayarEl.value) || 0;
     kembEl.textContent = (t > 0 && bayar >= t) ? fmt(bayar - t) : 'Rp 0';
   }
-  bayarEl.addEventListener('input', updateTotal);
+  bayarEl.addEventListener('input', () => {
+    bayarManual = bayarEl.value !== '';
+    updateTotal();
+  });
+  bayarEl.addEventListener('focus', () => { bayarEl.select(); });
 
-  document.getElementById('kosongBtn').addEventListener('click', () => { cart = []; bayarEl.value=''; renderCart(); });
+  document.getElementById('kosongBtn').addEventListener('click', () => { cart = []; bayarEl.value=''; bayarManual=false; renderCart(); });
 
   document.getElementById('simpanBtn').addEventListener('click', async () => {
     if (cart.length === 0) { alert('Keranjang kosong'); return; }
