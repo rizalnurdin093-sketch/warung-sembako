@@ -30,9 +30,12 @@
 </div>
 
 <div class="panel">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: .5rem;">
     <h2>Histori Transaksi Detail (Audit)</h2>
-    <a href="{{ url_for('export_csv', jenis='transaksi') }}" class="btn-ghost">Export CSV</a>
+    <div style="display:flex;gap:.5rem;">
+      <a href="{{ url_for('export_csv', jenis='transaksi') }}" class="btn-ghost">Export CSV</a>
+      <a href="{{ url_for('export_xlsx', jenis='transaksi') }}" class="btn-ghost">Export Excel</a>
+    </div>
   </div>
   <div style="overflow-x: auto;">
     <table class="table">
