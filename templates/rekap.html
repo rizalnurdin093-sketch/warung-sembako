@@ -13,16 +13,17 @@
     <a href="{{ url_for('export_csv', jenis='transaksi') }}" class="btn-ghost">CSV</a>
     <a href="{{ url_for('export_xlsx', jenis='transaksi') }}" class="btn-ghost">Excel</a>
   </div>
+  <div class="table-wrap">
   <table class="table">
     <thead>
-      <tr><th>Tanggal</th><th>Produk</th><th class="num">Harga</th><th class="num">Qty</th><th class="num">Total</th></tr>
+      <tr><th>Tanggal</th><th class="num">Jumlah Transaksi</th><th class="num">Item Terjual</th><th class="num">Total</th></tr>
     </thead>
     <tbody>
       {% for r in rows %}
       <tr>
         <td>{{ r['hari'] }}</td>
-        <td>{{ r['jumlah_transaksi'] }}</td>
-        <td>{{ r['total_item'] }}</td>
+        <td class="num">{{ r['jumlah_transaksi'] }}</td>
+        <td class="num">{{ r['total_item'] }}</td>
         <td class="num">Rp {{ '{:,}'.format(r['total']) }}</td>
       </tr>
       {% else %}
@@ -30,5 +31,6 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
 </div>
 {% endblock %}
