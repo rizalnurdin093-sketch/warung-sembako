@@ -40,18 +40,21 @@
   <div style="overflow-x: auto;">
     <table class="table">
       <thead>
-        <tr><th>ID</th><th>Waktu</th><th>Produk</th><th class="num">Harga</th><th class="num">Qty</th><th class="num">Total</th><th>Kasir</th></tr>
+        <tr><th>ID</th><th>Waktu</th><th>Kasir</th><th>Item</th><th class="num">Total</th><th class="num">Bayar</th><th class="num">Kembalian</th></tr>
       </thead>
       <tbody>
         {% for t in transaksi %}
         <tr>
           <td>{{ t['id'] }}</td>
           <td>{{ t['created_at']|utc_to_wib }}</td>
-          <td>{{ t['nama_produk'] }}</td>
-          <td class="num">Rp {{ '{:,}'.format(t['harga_satuan']) }}</td>
-          <td class="num">{{ t['qty'] }}</td>
-          <td class="num">Rp {{ '{:,}'.format(t['total']) }}</td>
           <td>{{ t['kasir'] or '-' }}</td>
+          <td>
+            {% set det = detail_map.get(t['id'], []) %}
+            {% for d in det %}{{ d['nama_produk'] }} ×{{ d['qty'] }}{% if not loop.last %}, {% endif %}{% endfor %}
+          </td>
+          <td class="num">Rp {{ '{:,}'.format(t['total']) }}</td>
+          <td class="num">{{ ('Rp ' + '{:,}'.format(t['bayar'])) if t['bayar'] is not none else '-' }}</td>
+          <td class="num">{{ ('Rp ' + '{:,}'.format(t['kembalian'])) if t['kembalian'] is not none else '-' }}</td>
         </tr>
         {% else %}
         <tr><td colspan="7" class="empty">Belum ada transaksi.</td></tr>

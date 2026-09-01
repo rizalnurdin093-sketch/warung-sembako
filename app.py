@@ -119,21 +119,33 @@ def api_produk(pid):
 @app.route('/jual', methods=['POST'])
 @login_required
 def jual():
-    pid = int(request.form['produk_id'])
-    qty = int(request.form['qty'])
-    produk = db.produk_list()
-    p = next((x for x in produk if x['id'] == pid), None)
-    if not p:
-        return 'Produk tidak ditemukan', 400
-    if qty < 1:
-        return 'Qty minimal 1', 400
-    if qty > p['stok']:
-        return f'Stok tidak cukup (sisa {p["stok"]})', 400
+    # Terima keranjang multi-item: JSON list [{produk_id, qty}]
+    data = request.get_json(silent=True) or {}
+    items = data.get('keranjang') or []
+    bayar = data.get('bayar')
+    if not isinstance(items, list) or not items:
+        return ('Keranjang kosong', 400)
+
+    produk_map = {p['id']: p for p in db.produk_list()}
+    cart = []
+    for it in items:
+        pid = int(it.get('produk_id'))
+        qty = int(it.get('qty', 1))
+        p = produk_map.get(pid)
+        if not p:
+            return (f'Produk {pid} tidak ditemukan', 400)
+        if qty < 1:
+            return ('Qty minimal 1', 400)
+        if qty > p['stok']:
+            return (f'Stok tidak cukup untuk {p["nama"]} (sisa {p["stok"]})', 400)
+        cart.append({'produk_id': pid, 'nama': p['nama'], 'harga_jual': p['harga_jual'], 'qty': qty})
+
     kasir = current_user()['nama'] or current_user()['username']
-    db.transaksi_add(p['nama'], p['harga_jual'], qty, kasir)
-    db.stok_kurang(pid, qty)
-    flash('Penjualan tercatat', 'success')
-    return redirect(url_for('kasir'))
+    try:
+        tid, total = db.transaksi_buat(cart, kasir, bayar)
+    except ValueError as e:
+        return (str(e), 400)
+    return jsonify({'ok': True, 'transaksi_id': tid, 'total': total, 'kasir': kasir})
 
 # ===== REKAP — OWNER ONLY =====
 @app.route('/rekap')
@@ -281,14 +293,16 @@ def export_csv(jenis):
     writer = csv.writer(output)
     
     if jenis == 'transaksi':
-        writer.writerow(['ID', 'Tanggal', 'Produk', 'Harga', 'Qty', 'Total', 'Kasir'])
+        writer.writerow(['ID Transaksi', 'Tanggal', 'Produk', 'Harga', 'Qty', 'Subtotal', 'Kasir'])
         rows = db.get_db().execute("""
-            SELECT id, created_at, nama_produk, harga_satuan, qty, total, kasir
-            FROM transaksi ORDER BY created_at DESC
+            SELECT t.id AS tid, t.created_at, t.kasir,
+                   d.nama_produk, d.harga_satuan, d.qty, d.subtotal
+            FROM transaksi t JOIN detail_transaksi d ON d.transaksi_id = t.id
+            ORDER BY t.created_at DESC, t.id DESC
         """).fetchall()
         for r in rows:
-            writer.writerow([r['id'], r['created_at'], r['nama_produk'], 
-                           r['harga_satuan'], r['qty'], r['total'], r['kasir'] or ''])
+            writer.writerow([r['tid'], r['created_at'], r['nama_produk'],
+                             r['harga_satuan'], r['qty'], r['subtotal'], r['kasir'] or ''])
         filename = f'export_transaksi_{datetime.now().strftime("%Y%m%d")}.csv'
     
     elif jenis == 'produk':
@@ -358,9 +372,15 @@ def export_xlsx(jenis):
             ws.append(r)
 
     if jenis == 'transaksi':
-        write_rows(['ID', 'Tanggal', 'Produk', 'Harga', 'Qty', 'Total', 'Kasir'],
-            [ [r['id'], r['created_at'], r['nama_produk'], r['harga_satuan'], r['qty'], r['total'], r['kasir'] or '']
-              for r in db.get_db().execute("SELECT * FROM transaksi ORDER BY created_at DESC").fetchall() ])
+        rows = db.get_db().execute("""
+            SELECT t.id AS tid, t.created_at, t.kasir,
+                   d.nama_produk, d.harga_satuan, d.qty, d.subtotal
+            FROM transaksi t JOIN detail_transaksi d ON d.transaksi_id = t.id
+            ORDER BY t.created_at DESC, t.id DESC
+        """).fetchall()
+        write_rows(['ID Transaksi', 'Tanggal', 'Produk', 'Harga', 'Qty', 'Subtotal', 'Kasir'],
+            [ [r['tid'], r['created_at'], r['nama_produk'], r['harga_satuan'], r['qty'], r['subtotal'], r['kasir'] or '']
+              for r in rows ])
         filename = f'warung_transaksi.xlsx'
 
     elif jenis == 'produk':
@@ -394,7 +414,12 @@ def audit():
     transaksi = db.transaksi_all()
     per_kasir = db.rekap_per_kasir()
     total_all = sum(r['total'] for r in transaksi)
-    return render_template('audit.html', transaksi=transaksi, per_kasir=per_kasir, total_all=total_all)
+    # Muat detail item per transaksi (untuk tampil isi struk)
+    detail_map = {}
+    for t in transaksi:
+        detail_map[t['id']] = db.transaksi_detail(t['id'])
+    return render_template('audit.html', transaksi=transaksi, per_kasir=per_kasir,
+                           total_all=total_all, detail_map=detail_map)
 
 # ===== BACKUP / RESTORE DATABASE =====
 @app.route('/backup')

@@ -23,82 +23,139 @@
 
   <!-- Right: cart -->
   <div class="panel">
-    <h2>Transaksi</h2>
-    <form method="POST" action="{{ url_for('jual') }}" id="jualForm">
-      <div class="form-row">
-        <label>Barang</label>
-        <input type="text" id="prodNama" value="" placeholder="Pilih di kiri" readonly required>
-        <input type="hidden" name="produk_id" id="prodId">
+    <h2>🧺 Keranjang</h2>
+    <div id="cart" class="cart-list">
+      <p class="empty" id="cartEmpty">Keranjang kosong. Klik produk di kiri.</p>
+    </div>
+
+    <div class="cart-total">
+      <div class="totals-row"><span>Total</span><strong id="cartTotal">Rp 0</strong></div>
+      <div class="form-row" style="margin-top:.5rem;">
+        <label>Uang Bayar</label>
+        <input type="number" id="bayarInput" min="0" placeholder="Masukkan nominal bayar" style="width:100%;padding:.6rem .8rem;border:1px solid var(--border);border-radius:8px;">
       </div>
-      <div class="form-row">
-        <label>Harga Satuan</label>
-        <input type="text" id="prodHarga" value="Rp 0" readonly>
-      </div>
-      <div class="form-row">
-        <label>Jumlah (qty)</label>
-        <input type="number" name="qty" id="prodQty" value="1" min="1" required>
-      </div>
-      <div class="form-row totals">
-        <span>Total</span>
-        <strong id="prodTotal">Rp 0</strong>
-      </div>
-      <button class="btn-solid" type="submit">Catat Penjualan</button>
-      <p class="stok-warn" id="stokWarn"></p>
-    </form>
-    <p class="hint">Pilih produk di kiri, atur jumlah, lalu "Catat Penjualan".</p>
+      <div class="totals-row"><span>Kembalian</span><strong id="cartKembalian">Rp 0</strong></div>
+    </div>
+
+    <div style="margin-top:1rem; display:flex; gap:.5rem;">
+      <button class="btn-solid" id="simpanBtn" style="flex:1;" type="button">Bayar &amp; Simpan</button>
+      <button class="btn-ghost" id="kosongBtn" type="button">Kosongkan</button>
+    </div>
+    <p class="hint" style="margin-top:.5rem;">Klik produk untuk tambah ke keranjang, atur qty, lalu Bayar. Total otomatis dihitung.</p>
   </div>
 </div>
 {% endblock %}
 {% block scripts %}
 <script>
-  let selected = null;
   const fmt = n => 'Rp ' + n.toLocaleString('id-ID');
+  let cart = []; // {id, nama, harga, stok, qty}
 
-  // Filter search
+  // Search filter
   const searchEl = document.getElementById('searchProduk');
   const grid = document.getElementById('produkGrid');
   if (searchEl) {
     searchEl.addEventListener('input', e => {
       const query = e.target.value.toLowerCase();
       grid.querySelectorAll('.produk-card').forEach(card => {
-        const nama = card.dataset.nama.toLowerCase();
-        card.style.display = nama.includes(query) ? '' : 'none';
+        card.style.display = card.dataset.nama.toLowerCase().includes(query) ? '' : 'none';
       });
     });
   }
 
+  // Click produk -> add to cart
   document.querySelectorAll('.produk-card').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.produk-card').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      selected = {
-        id: btn.dataset.id, nama: btn.dataset.nama,
-        harga: parseInt(btn.dataset.harga), stok: parseInt(btn.dataset.stok)
-      };
-      document.getElementById('prodId').value = selected.id;
-      document.getElementById('prodNama').value = selected.nama;
-      document.getElementById('prodHarga').value = fmt(selected.harga);
-      document.getElementById('prodQty').value = 1;
-      updateTotal();
+      const id = parseInt(btn.dataset.id);
+      const nama = btn.dataset.nama;
+      const harga = parseInt(btn.dataset.harga);
+      const stok = parseInt(btn.dataset.stok);
+      const existing = cart.find(c => c.id === id);
+      if (existing) {
+        if (existing.qty >= stok) { alert('Stok tidak cukup (sisa ' + stok + ')'); return; }
+        existing.qty++;
+      } else {
+        cart.push({ id, nama, harga, stok, qty: 1 });
+      }
+      renderCart();
     });
   });
 
-  const qtyEl = document.getElementById('prodQty');
-  const warnEl = document.getElementById('stokWarn');
-  function updateTotal() {
-    if (!selected) return;
-    const qty = parseInt(qtyEl.value) || 1;
-    document.getElementById('prodTotal').textContent = fmt(selected.harga * qty);
-    if (qty > selected.stok) {
-      warnEl.textContent = '⚠ Stok tidak cukup (sisa ' + selected.stok + ')';
-    } else {
-      warnEl.textContent = '';
-    }
-  }
-  qtyEl.addEventListener('input', updateTotal);
+  function renderCart() {
+    const box = document.getElementById('cart');
+    const empty = document.getElementById('cartEmpty');
+    box.querySelectorAll('.cart-item').forEach(el => el.remove());
+    if (cart.length === 0) { empty.style.display = ''; }
+    else { empty.style.display = 'none'; }
 
-  document.getElementById('jualForm').addEventListener('submit', e => {
-    if (!selected) { e.preventDefault(); alert('Pilih barang dulu'); }
+    cart.forEach((c, i) => {
+      const div = document.createElement('div');
+      div.className = 'cart-item';
+      div.innerHTML = `
+        <div class="ci-info">
+          <div class="ci-nama">${c.nama}</div>
+          <div class="ci-harga num">${fmt(c.harga)} × ${c.qty}</div>
+        </div>
+        <div class="ci-actions">
+          <button type="button" class="ci-btn" data-act="minus" data-i="${i}">−</button>
+          <span class="ci-qty num">${c.qty}</span>
+          <button type="button" class="ci-btn" data-act="plus" data-i="${i}">+</button>
+          <button type="button" class="ci-btn ci-del" data-act="del" data-i="${i}">✕</button>
+        </div>
+        <div class="ci-sub num">${fmt(c.harga * c.qty)}</div>`;
+      box.appendChild(div);
+    });
+    updateTotal();
+  }
+
+  document.getElementById('cart').addEventListener('click', e => {
+    const btn = e.target.closest('.ci-btn');
+    if (!btn) return;
+    const i = parseInt(btn.dataset.i);
+    const act = btn.dataset.act;
+    const c = cart[i];
+    if (act === 'plus') { if (c.qty >= c.stok) { alert('Stok tidak cukup (sisa ' + c.stok + ')'); return; } c.qty++; }
+    else if (act === 'minus') { c.qty--; if (c.qty <= 0) { cart.splice(i,1); } }
+    else if (act === 'del') { cart.splice(i,1); }
+    renderCart();
+  });
+
+  const bayarEl = document.getElementById('bayarInput');
+  const totalEl = document.getElementById('cartTotal');
+  const kembEl = document.getElementById('cartKembalian');
+
+  function cartTotal() { return cart.reduce((s,c) => s + c.harga * c.qty, 0); }
+  function updateTotal() {
+    const t = cartTotal();
+    totalEl.textContent = fmt(t);
+    const bayar = parseInt(bayarEl.value) || 0;
+    kembEl.textContent = t > 0 && bayar >= t ? fmt(bayar - t) : (t>0 ? 'Rp 0' : 'Rp 0');
+  }
+  bayarEl.addEventListener('input', updateTotal);
+
+  document.getElementById('kosongBtn').addEventListener('click', () => { cart = []; bayarEl.value=''; renderCart(); });
+
+  document.getElementById('simpanBtn').addEventListener('click', async () => {
+    if (cart.length === 0) { alert('Keranjang kosong'); return; }
+    const total = cartTotal();
+    const bayar = parseInt(bayarEl.value) || 0;
+    if (bayar > 0 && bayar < total) { alert('Uang bayar kurang dari total (' + fmt(total) + ')'); return; }
+
+    const payload = {
+      keranjang: cart.map(c => ({ produk_id: c.id, qty: c.qty })),
+      bayar: bayar > 0 ? bayar : null
+    };
+    try {
+      const res = await fetch('{{ url_for("jual") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) { alert(data.error || 'Terjadi kesalahan'); return; }
+      alert('✅ Transaksi #' + data.transaksi_id + ' tersimpan.\nTotal: ' + fmt(data.total) + (data.kembalian ? '\nKembalian: ' + fmt(data.kembalian) : ''));
+      cart = []; bayarEl.value=''; renderCart();
+      location.reload(); // refresh stok
+    } catch (err) { alert('Gagal menyimpan'); }
   });
 </script>
 {% endblock %}
